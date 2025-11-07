@@ -166,58 +166,88 @@ const handleEmojiClick = async (emoji: string) => {
   }
 }
 
-// Poll for new emojis from other users
-const pollForEmojis = async () => {
+// Process a new emoji event from SSE
+const processEmojiEvent = (event: EmojiEvent) => {
+  // Check if we already have this event
+  const existingIndex = liveEmojis.value.findIndex((e: EmojiEvent) => e.id === event.id)
+  
+  if (existingIndex !== -1) {
+    // Event already exists, skip
+    return
+  }
+  
+  // Check if we have a pending event with the same emoji and similar timestamp
+  const pendingIndex = liveEmojis.value.findIndex(
+    (e: EmojiEvent) => e.pending && e.emoji === event.emoji && Math.abs(e.timestamp - event.timestamp) < 2000
+  )
+  
+  if (pendingIndex !== -1) {
+    // Replace pending event with server event
+    liveEmojis.value[pendingIndex] = event
+  } else {
+    // Add as new event (from another user)
+    liveEmojis.value.push(event)
+  }
+  
+  // Limit the number of displayed emojis (keep last 200)
+  if (liveEmojis.value.length > 200) {
+    liveEmojis.value = liveEmojis.value.slice(-200)
+  }
+  
+  // Scroll to show latest
+  nextTick(() => {
+    scrollToLatest()
+  })
+}
+
+// Connect to SSE stream
+const connectToSSE = () => {
   try {
-    const response = await $fetch<{
-      events: EmojiEvent[]
-      count: number
-      timestamp: number
-    }>('/api/emojis', {
-      query: {
-        since: lastPollTimestamp.value
+    const es = new EventSource('/api/emojis/stream')
+    eventSource.value = es
+    
+    es.onopen = () => {
+      isConnected.value = true
+      console.log('SSE connection opened')
+    }
+    
+    es.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data)
+        
+        // Handle different message types
+        if (data.type === 'connected') {
+          console.log('SSE connected:', data.message)
+        } else if (data.type === 'initial') {
+          // Initial batch of events
+          if (data.events && Array.isArray(data.events)) {
+            data.events.forEach((event: EmojiEvent) => {
+              processEmojiEvent(event)
+            })
+          }
+        } else if (data.id && data.emoji && data.timestamp) {
+          // Single emoji event
+          processEmojiEvent(data as EmojiEvent)
+        }
+      } catch (error) {
+        console.error('Error parsing SSE message:', error)
       }
-    } as any)
+    }
     
-    isConnected.value = true
-    
-    // Add new events that we don't already have
-    const existingIds = new Set(liveEmojis.value.map((e: EmojiEvent) => e.id))
-    const newEvents = response.events.filter((e: EmojiEvent) => !existingIds.has(e.id))
-    
-    // Process new events - replace pending ones or add new ones
-    for (const event of newEvents) {
-      // Check if we have a pending event with the same emoji and similar timestamp
-      const pendingIndex = liveEmojis.value.findIndex(
-        (e: EmojiEvent) => e.pending && e.emoji === event.emoji && Math.abs(e.timestamp - event.timestamp) < 2000
-      )
+    es.onerror = (error) => {
+      console.error('SSE error:', error)
+      isConnected.value = false
       
-      if (pendingIndex !== -1) {
-        // Replace pending event with server event
-        liveEmojis.value[pendingIndex] = event
-      } else {
-        // Add as new event (from another user)
-        liveEmojis.value.push(event)
-      }
-    }
-    
-    // Update last poll timestamp
-    if (response.events.length > 0) {
-      lastPollTimestamp.value = Math.max(...response.events.map(e => e.timestamp))
-    }
-    
-    // Limit the number of displayed emojis (keep last 200)
-    if (liveEmojis.value.length > 200) {
-      liveEmojis.value = liveEmojis.value.slice(-200)
-    }
-    
-    // Scroll to show latest if new emojis were added
-    if (newEvents.length > 0) {
-      await nextTick()
-      scrollToLatest()
+      // Attempt to reconnect after 3 seconds
+      setTimeout(() => {
+        if (eventSource.value) {
+          eventSource.value.close()
+        }
+        connectToSSE()
+      }, 3000)
     }
   } catch (error) {
-    console.error('Failed to poll for emojis:', error)
+    console.error('Failed to connect to SSE:', error)
     isConnected.value = false
   }
 }
