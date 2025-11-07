@@ -144,14 +144,26 @@ interface EmojiEvent {
   pending?: boolean
 }
 
-const emojiList = ['😀', '😂', '😍', '😎', '😢', '😮', '🤔', '😴', '🤗', '😋', '🥳', '🤩', '😇', '🤪', '😏', '😭', '😱', '🤯', '💯', '🔥']
+interface VotingSession {
+  type: 'add' | 'remove'
+  candidates: string[]
+  votes: Record<string, number>
+  startTime: number
+  endTime: number
+  timeRemaining: number
+}
 
+const emojiList = ref<string[]>([]) // Will be populated from polling
 const liveEmojis = ref<EmojiEvent[]>([])
 const isConnected = ref(false)
 const isSubmitting = ref(false)
+const isVoting = ref(false)
 const connectedUsers = ref(0)
 const eventSource = ref<any>(null) // EventSource is browser-only, use any to avoid SSR issues
 const liveEmojisContainer = ref<HTMLElement | null>(null)
+const votingSession = ref<VotingSession | null>(null)
+const userVote = ref<string | null>(null)
+const clientId = ref<string>('')
 
 // Reconnection state
 let reconnectTimeout: any = null
