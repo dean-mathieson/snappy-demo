@@ -24,6 +24,8 @@ const MAX_AGE_MS = 5 * 60 * 1000
 export function subscribeSSEClient(client: SSEClient): void {
   sseClients.add(client)
   console.log(`SSE client connected. Total clients: ${sseClients.size}`)
+  // Broadcast updated client count
+  broadcastClientCount()
 }
 
 /**
@@ -32,6 +34,32 @@ export function subscribeSSEClient(client: SSEClient): void {
 export function unsubscribeSSEClient(client: SSEClient): void {
   sseClients.delete(client)
   console.log(`SSE client disconnected. Total clients: ${sseClients.size}`)
+  // Broadcast updated client count
+  broadcastClientCount()
+}
+
+/**
+ * Get the current number of connected clients
+ */
+export function getConnectedClientCount(): number {
+  return sseClients.size
+}
+
+/**
+ * Broadcast the current client count to all connected clients
+ */
+function broadcastClientCount(): void {
+  const count = sseClients.size
+  const message = `data: ${JSON.stringify({ type: 'client_count', count })}\n\n`
+  
+  sseClients.forEach(client => {
+    try {
+      client.send(message)
+    } catch (error) {
+      console.error('Error sending client count to SSE client:', error)
+      sseClients.delete(client)
+    }
+  })
 }
 
 /**

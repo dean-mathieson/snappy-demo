@@ -5,7 +5,7 @@
       <p class="text-xl opacity-90 mb-4">Click an emoji to see it appear instantly for everyone!</p>
       <div class="flex justify-center gap-8 mt-4 text-sm">
         <span class="flex items-center gap-2" :class="{ 'text-green-400': isConnected }">
-          {{ isConnected ? '● Connected' : '○ Connecting...' }}
+          {{ isConnected ? `● Connected (${connectedUsers})` : '○ Connecting...' }}
         </span>
         <span class="opacity-80">{{ liveEmojis.length }} emojis shown</span>
       </div>
@@ -53,6 +53,36 @@
 // SEO Meta Information
 useHead({
   title: 'Snappy Demo - Real-time Emoji Board',
+  style: [
+    {
+      children: `
+        html, body {
+          background: linear-gradient(to bottom right, #667eea, #764ba2) !important;
+          min-height: 100vh;
+          margin: 0;
+          padding: 0;
+        }
+        body > div#__nuxt {
+          background: linear-gradient(to bottom right, #667eea, #764ba2);
+          min-height: 100vh;
+        }
+        .min-h-screen {
+          min-height: 100vh;
+        }
+        .bg-gradient-to-br {
+          background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
+        }
+        .from-\\[\\#667eea\\] {
+          --tw-gradient-from: #667eea var(--tw-gradient-from-position);
+          --tw-gradient-to: rgb(102 126 234 / 0) var(--tw-gradient-to-position);
+          --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+        }
+        .to-\\[\\#764ba2\\] {
+          --tw-gradient-to: #764ba2 var(--tw-gradient-to-position);
+        }
+      `
+    }
+  ],
   meta: [
     {
       name: 'description',
@@ -119,8 +149,13 @@ const emojiList = ['😀', '😂', '😍', '😎', '😢', '😮', '🤔', '😴
 const liveEmojis = ref<EmojiEvent[]>([])
 const isConnected = ref(false)
 const isSubmitting = ref(false)
-const eventSource = ref<EventSource | null>(null)
+const connectedUsers = ref(0)
+const eventSource = ref<any>(null) // EventSource is browser-only, use any to avoid SSR issues
 const liveEmojisContainer = ref<HTMLElement | null>(null)
+
+// Reconnection state
+let reconnectTimeout: any = null
+let isReconnecting = false
 
 // Optimistic UI: Add emoji immediately when clicked
 const handleEmojiClick = async (emoji: string) => {
@@ -135,7 +170,7 @@ const handleEmojiClick = async (emoji: string) => {
   // Add to live emojis immediately (optimistic update)
   liveEmojis.value.push(optimisticEvent)
   
-  // Scroll to show new emoji
+  // Scroll to show new emoji (client-side only)
   await nextTick()
   scrollToLatest()
   
@@ -200,14 +235,26 @@ const processEmojiEvent = (event: EmojiEvent) => {
   })
 }
 
-// Connect to SSE stream
+// Connect to SSE stream (client-side only)
 const connectToSSE = () => {
+  // Prevent multiple simultaneous reconnection attempts
+  if (isReconnecting) {
+    return
+  }
+  
   try {
+    // Close existing connection if any
+    if (eventSource.value) {
+      eventSource.value.close()
+      eventSource.value = null
+    }
+    
     const es = new EventSource('/api/emojis/stream')
     eventSource.value = es
     
     es.onopen = () => {
       isConnected.value = true
+      isReconnecting = false
       console.log('SSE connection opened')
     }
     
@@ -218,6 +265,14 @@ const connectToSSE = () => {
         // Handle different message types
         if (data.type === 'connected') {
           console.log('SSE connected:', data.message)
+          if (typeof data.count === 'number') {
+            connectedUsers.value = data.count
+          }
+        } else if (data.type === 'client_count') {
+          // Update connected user count
+          if (typeof data.count === 'number') {
+            connectedUsers.value = data.count
+          }
         } else if (data.type === 'initial') {
           // Initial batch of events
           if (data.events && Array.isArray(data.events)) {
@@ -235,43 +290,89 @@ const connectToSSE = () => {
     }
     
     es.onerror = (error) => {
-      console.error('SSE error:', error)
-      isConnected.value = false
+      // EventSource fires error events when connection closes
+      // Check readyState to determine if we should reconnect
+      // EventSource.CONNECTING = 0, EventSource.OPEN = 1, EventSource.CLOSED = 2
+      const CLOSED = 2
+      const CONNECTING = 0
       
-      // Attempt to reconnect after 3 seconds
-      setTimeout(() => {
-        if (eventSource.value) {
-          eventSource.value.close()
+      if (es.readyState === CLOSED) {
+        isConnected.value = false
+        console.log('SSE connection closed')
+        
+        // Only reconnect if we're not already reconnecting and connection is actually closed
+        if (!isReconnecting && reconnectTimeout === null) {
+          isReconnecting = true
+          reconnectTimeout = setTimeout(() => {
+            reconnectTimeout = null
+            console.log('Attempting to reconnect SSE...')
+            connectToSSE()
+          }, 3000)
         }
-        connectToSSE()
-      }, 3000)
+      } else if (es.readyState === CONNECTING) {
+        // Connection is in progress, just update status
+        isConnected.value = false
+        console.log('SSE connecting...')
+      }
     }
   } catch (error) {
     console.error('Failed to connect to SSE:', error)
     isConnected.value = false
+    isReconnecting = false
+    
+    // Retry connection after error
+    if (reconnectTimeout === null) {
+      isReconnecting = true
+      reconnectTimeout = setTimeout(() => {
+        reconnectTimeout = null
+        connectToSSE()
+      }, 3000)
+    }
   }
 }
 
-// Scroll to latest emoji
+// Scroll to latest emoji (client-side only)
 const scrollToLatest = () => {
   if (liveEmojisContainer.value) {
     liveEmojisContainer.value.scrollTop = liveEmojisContainer.value.scrollHeight
   }
 }
 
-// Connect to SSE on mount
+// Connect to SSE on mount (client-side only - onMounted only runs on client)
 onMounted(() => {
   connectToSSE()
 })
 
 // Clean up SSE connection on unmount
 onUnmounted(() => {
+  // Clear any pending reconnection attempts
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout)
+    reconnectTimeout = null
+  }
+  isReconnecting = false
+  
   if (eventSource.value) {
     eventSource.value.close()
     eventSource.value = null
   }
 })
 </script>
+
+<style>
+/* Critical CSS for SSR - ensure background is visible immediately */
+html, body {
+  background: linear-gradient(to bottom right, #667eea, #764ba2) !important;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+body > div#__nuxt {
+  background: linear-gradient(to bottom right, #667eea, #764ba2);
+  min-height: 100vh;
+}
+</style>
 
 <style scoped>
 /* Vue transition classes */

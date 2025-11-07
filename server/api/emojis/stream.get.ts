@@ -1,4 +1,4 @@
-import { subscribeSSEClient, unsubscribeSSEClient, getRecentEmojiEvents } from '../../utils/emojiStore'
+import { subscribeSSEClient, unsubscribeSSEClient, getRecentEmojiEvents, getConnectedClientCount } from '../../utils/emojiStore'
 
 export default defineEventHandler((event) => {
   // Set SSE headers
@@ -32,8 +32,9 @@ export default defineEventHandler((event) => {
   // Subscribe this client
   subscribeSSEClient(sseClient)
   
-  // Send initial connection message
-  sseClient.send(`data: ${JSON.stringify({ type: 'connected', message: 'Connected to emoji stream' })}\n\n`)
+  // Send initial connection message with current client count
+  const clientCount = getConnectedClientCount()
+  sseClient.send(`data: ${JSON.stringify({ type: 'connected', message: 'Connected to emoji stream', count: clientCount })}\n\n`)
   
   // Send recent emojis on connection
   const recentEmojis = getRecentEmojiEvents(50)
