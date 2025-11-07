@@ -64,6 +64,9 @@ export function addEmojiEvent(emoji: string): EmojiEvent {
   
   emojiEvents.push(event)
   
+  // Broadcast to all connected SSE clients
+  broadcastEvent(event)
+  
   // Clean up old events periodically
   cleanupOldEvents()
   
