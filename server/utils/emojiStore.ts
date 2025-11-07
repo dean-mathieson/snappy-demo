@@ -4,8 +4,93 @@ interface EmojiEvent {
   timestamp: number
 }
 
+interface Vote {
+  emoji: string
+  type: 'add' | 'remove'
+  timestamp: number
+  clientId: string
+}
+
+// Expanded emoji bank
+const EMOJI_BANK = [
+  '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃',
+  '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙',
+  '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔',
+  '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥',
+  '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮',
+  '🤧', '🥵', '🥶', '😶‍🌫️', '😵', '😵‍💫', '🤯', '🤠', '🥳', '😎',
+  '🤓', '🧐', '😕', '😟', '🙁', '☹️', '😮', '😯', '😲', '😳',
+  '🥺', '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱', '😖',
+  '😣', '😞', '😓', '😩', '😫', '🥱', '😤', '😡', '😠', '🤬',
+  '😈', '👿', '💀', '☠️', '💩', '🤡', '👹', '👺', '👻', '👽',
+  '👾', '🤖', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿',
+  '😾', '🙈', '🙉', '🙊', '💋', '💌', '💘', '💝', '💖', '💗',
+  '💓', '💞', '💕', '💟', '❣️', '💔', '❤️', '🧡', '💛', '💚',
+  '💙', '💜', '🖤', '🤍', '🤎', '💯', '💢', '💥', '💫', '💦',
+  '💨', '🕳️', '💣', '💬', '👁️‍🗨️', '🗨️', '🗯️', '💭', '💤', '🔥',
+  '⭐', '🌟', '✨', '⚡', '☄️', '💥', '💫', '💢', '💯', '🎉',
+  '🎊', '🎈', '🎁', '🎀', '🏆', '🥇', '🥈', '🥉', '⚽', '🏀',
+  '🏈', '⚾', '🎾', '🏐', '🏉', '🎱', '🏓', '🏸', '🥅', '🏒',
+  '🏑', '🏏', '⛳', '🏹', '🎣', '🥊', '🥋', '🎽', '🏋️', '🤼',
+  '🤸', '🤺', '🤾', '🤹', '🧘', '🏄', '🏊', '🤽', '🚣', '🧗',
+  '🚵', '🚴', '🏇', '🤹', '🎪', '🎭', '🩰', '🎨', '🎬', '🎤',
+  '🎧', '🎼', '🎹', '🥁', '🎷', '🎺', '🎸', '🪕', '🎻', '🎲',
+  '🎯', '🎳', '🎮', '🎰', '🧩', '🚗', '🚕', '🚙', '🚌', '🚎',
+  '🏎️', '🚓', '🚑', '🚒', '🚐', '🚚', '🚛', '🚜', '🛴', '🚲',
+  '🛵', '🏍️', '🛺', '🚨', '🚔', '🚍', '🚘', '🚖', '🚡', '🚠',
+  '🚟', '🚃', '🚋', '🚞', '🚝', '🚄', '🚅', '🚈', '🚂', '🚆',
+  '🚇', '🚊', '🚉', '✈️', '🛫', '🛬', '🛩️', '💺', '🚁', '🚟',
+  '🚀', '🛸', '🚤', '🛥️', '🛳️', '⛴️', '🚢', '⚓', '⛽', '🚧',
+  '🚦', '🚥', '🗺️', '🗿', '🗽', '🗼', '🏰', '🏯', '🏟️', '🎡',
+  '🎢', '🎠', '⛲', '⛱️', '🏖️', '🏝️', '🏜️', '🌋', '⛰️', '🏔️',
+  '🗻', '🏕️', '⛺', '🏠', '🏡', '🏘️', '🏚️', '🏗️', '🏭', '🏢',
+  '🏬', '🏣', '🏤', '🏥', '🏦', '🏨', '🏪', '🏫', '🏩', '💒',
+  '🏛️', '⛪', '🕌', '🕍', '🕋', '⛩️', '🛤️', '🛣️', '🗾', '🎑',
+  '🏞️', '🌅', '🌄', '🌠', '🎇', '🎆', '🌇', '🌆', '🏙️', '🌃',
+  '🌌', '🌉', '🌁', '🌊', '🌋', '🌍', '🌎', '🌏', '🌐', '🗺️',
+  '🗾', '🧭', '🏔️', '⛰️', '🌲', '🌳', '🌴', '🌵', '🌶️', '🌷',
+  '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🌞', '🌝', '🌛', '🌜',
+  '🌚', '🌕', '🌖', '🌗', '🌘', '🌑', '🌒', '🌓', '🌔', '🌙',
+  '🌎', '🌍', '🌏', '🪐', '💫', '⭐', '🌟', '✨', '⚡', '☄️',
+  '💥', '🔥', '🌈', '☀️', '⛅', '☁️', '⛈️', '🌤️', '🌦️', '🌧️',
+  '⛈️', '🌩️', '🌨️', '❄️', '☃️', '⛄', '🌬️', '💨', '💧', '💦',
+  '☔', '☂️', '🌊', '🌫️', '🍏', '🍎', '🍐', '🍊', '🍋', '🍌',
+  '🍉', '🍇', '🍓', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝',
+  '🍅', '🍆', '🥑', '🥦', '🥬', '🥒', '🌶️', '🌽', '🥕', '🥔',
+  '🍠', '🥐', '🥯', '🍞', '🥖', '🥨', '🧀', '🥚', '🍳', '🥞',
+  '🥓', '🥩', '🍗', '🍖', '🌭', '🍔', '🍟', '🍕', '🥪', '🥙',
+  '🌮', '🌯', '🥗', '🥘', '🥫', '🍝', '🍜', '🍲', '🍛', '🍣',
+  '🍱', '🍘', '🍙', '🍚', '🍙', '🍢', '🍡', '🍧', '🍨', '🍦',
+  '🥧', '🍰', '🎂', '🍮', '🍭', '🍬', '🍫', '🍿', '🍩', '🍪',
+  '🌰', '🥜', '🍯', '🥛', '🍼', '☕', '🍵', '🥤', '🍶', '🍺',
+  '🍻', '🥂', '🍷', '🥃', '🍸', '🍹', '🧃', '🧉', '🧊', '🥄',
+  '🍴', '🍽️', '🥢', '🥣', '🥡', '🥧', '🔪', '🏺', '🌍', '🌎',
+  '🌏', '🌐', '🗺️', '🧭', '🏔️', '⛰️', '🌋', '🗻', '🏕️', '⛺',
+  '🏠', '🏡', '🏘️', '🏚️', '🏗️', '🏭', '🏢', '🏬', '🏣', '🏤',
+  '🏥', '🏦', '🏨', '🏪', '🏫', '🏩', '💒', '🏛️', '⛪', '🕌',
+  '🕍', '🕋', '⛩️', '🛤️', '🛣️', '🗾', '🎑', '🏞️', '🌅', '🌄',
+  '🌠', '🎇', '🎆', '🌇', '🌆', '🏙️', '🌃', '🌌', '🌉', '🌁'
+]
+
 // In-memory store for emoji events
 const emojiEvents: EmojiEvent[] = []
+
+// Active emoji list (the ones users can click)
+let activeEmojis: string[] = EMOJI_BANK.slice(0, 20) // Start with first 20
+
+// Current voting session
+interface VotingSession {
+  type: 'add' | 'remove'
+  candidates: string[]
+  votes: Map<string, number> // emoji -> vote count
+  startTime: number
+  endTime: number
+  clientVotes: Map<string, string> // clientId -> emoji they voted for
+}
+
+let currentVotingSession: VotingSession | null = null
+let pollingInterval: NodeJS.Timeout | null = null
+let isAddingMode = true // Alternate between adding and removing
 
 // Set of connected SSE clients (EventSource connections)
 type SSEClient = {
@@ -17,6 +102,224 @@ const sseClients = new Set<SSEClient>()
 
 // Maximum age for emoji events (5 minutes in milliseconds)
 const MAX_AGE_MS = 5 * 60 * 1000
+
+// Polling interval (1 minute)
+const POLLING_INTERVAL_MS = 60 * 1000
+
+/**
+ * Initialize polling system
+ */
+export function initializePolling(): void {
+  if (pollingInterval) {
+    return // Already initialized
+  }
+
+  // Start first voting session
+  startVotingSession()
+
+  // Set up polling interval
+  pollingInterval = setInterval(() => {
+    endCurrentVotingSession()
+    isAddingMode = !isAddingMode // Alternate
+    startVotingSession()
+  }, POLLING_INTERVAL_MS)
+
+  console.log('Polling system initialized')
+}
+
+/**
+ * Start a new voting session
+ */
+function startVotingSession(): void {
+  const type = isAddingMode ? 'add' : 'remove'
+  let candidates: string[] = []
+
+  if (type === 'add') {
+    // Get 3 random emojis from bank that are not in active list
+    const availableEmojis = EMOJI_BANK.filter(emoji => !activeEmojis.includes(emoji))
+    candidates = shuffleArray(availableEmojis).slice(0, 3)
+  } else {
+    // Get 3 random emojis from active list
+    candidates = shuffleArray([...activeEmojis]).slice(0, 3)
+  }
+
+  // Ensure we have at least 3 candidates
+  if (candidates.length < 3) {
+    if (type === 'add') {
+      // If not enough to add, switch to remove mode
+      candidates = shuffleArray([...activeEmojis]).slice(0, Math.min(3, activeEmojis.length))
+      isAddingMode = false
+    } else {
+      // If not enough to remove, switch to add mode
+      const availableEmojis = EMOJI_BANK.filter(emoji => !activeEmojis.includes(emoji))
+      candidates = shuffleArray(availableEmojis).slice(0, 3)
+      isAddingMode = true
+    }
+  }
+
+  currentVotingSession = {
+    type: isAddingMode ? 'add' : 'remove',
+    candidates,
+    votes: new Map(),
+    startTime: Date.now(),
+    endTime: Date.now() + POLLING_INTERVAL_MS,
+    clientVotes: new Map()
+  }
+
+  // Broadcast voting session start
+  broadcastVotingSession()
+  console.log(`Voting session started: ${type} mode with candidates:`, candidates)
+}
+
+/**
+ * End current voting session and apply results
+ */
+function endCurrentVotingSession(): void {
+  if (!currentVotingSession) {
+    return
+  }
+
+  // Find winner (emoji with most votes)
+  let winner: string | null = null
+  let maxVotes = 0
+
+  currentVotingSession.votes.forEach((votes, emoji) => {
+    if (votes > maxVotes) {
+      maxVotes = votes
+      winner = emoji
+    }
+  })
+
+  // Apply result
+  if (winner) {
+    if (currentVotingSession.type === 'add') {
+      // Add winner to active list
+      if (!activeEmojis.includes(winner)) {
+        activeEmojis.push(winner)
+        console.log(`Added emoji ${winner} to active list`)
+      }
+    } else {
+      // Remove winner from active list
+      const index = activeEmojis.indexOf(winner)
+      if (index !== -1) {
+        activeEmojis.splice(index, 1)
+        console.log(`Removed emoji ${winner} from active list`)
+      }
+    }
+
+    // Broadcast emoji list update
+    broadcastEmojiListUpdate()
+  }
+
+  // Clear voting session
+  currentVotingSession = null
+}
+
+/**
+ * Shuffle array (Fisher-Yates algorithm)
+ */
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
+
+/**
+ * Vote for an emoji in the current voting session
+ */
+export function voteForEmoji(emoji: string, clientId: string): { success: boolean; message: string } {
+  if (!currentVotingSession) {
+    return { success: false, message: 'No active voting session' }
+  }
+
+  if (!currentVotingSession.candidates.includes(emoji)) {
+    return { success: false, message: 'Emoji is not a candidate in this voting session' }
+  }
+
+  // Check if client already voted
+  const previousVote = currentVotingSession.clientVotes.get(clientId)
+  if (previousVote) {
+    // Remove previous vote
+    const previousCount = currentVotingSession.votes.get(previousVote) || 0
+    currentVotingSession.votes.set(previousVote, Math.max(0, previousCount - 1))
+  }
+
+  // Add new vote
+  currentVotingSession.clientVotes.set(clientId, emoji)
+  const currentCount = currentVotingSession.votes.get(emoji) || 0
+  currentVotingSession.votes.set(emoji, currentCount + 1)
+
+  // Broadcast updated voting session
+  broadcastVotingSession()
+
+  return { success: true, message: 'Vote recorded' }
+}
+
+/**
+ * Get current voting session
+ */
+export function getCurrentVotingSession(): VotingSession | null {
+  return currentVotingSession
+}
+
+/**
+ * Get active emoji list
+ */
+export function getActiveEmojis(): string[] {
+  return [...activeEmojis]
+}
+
+/**
+ * Broadcast voting session to all connected clients
+ */
+function broadcastVotingSession(): void {
+  if (!currentVotingSession) {
+    return
+  }
+
+  const message = `data: ${JSON.stringify({
+    type: 'voting_session',
+    session: {
+      type: currentVotingSession.type,
+      candidates: currentVotingSession.candidates,
+      votes: Object.fromEntries(currentVotingSession.votes),
+      startTime: currentVotingSession.startTime,
+      endTime: currentVotingSession.endTime,
+      timeRemaining: Math.max(0, currentVotingSession.endTime - Date.now())
+    }
+  })}\n\n`
+
+  sseClients.forEach(client => {
+    try {
+      client.send(message)
+    } catch (error) {
+      console.error('Error sending voting session to SSE client:', error)
+      sseClients.delete(client)
+    }
+  })
+}
+
+/**
+ * Broadcast emoji list update to all connected clients
+ */
+function broadcastEmojiListUpdate(): void {
+  const message = `data: ${JSON.stringify({
+    type: 'emoji_list_update',
+    activeEmojis: activeEmojis
+  })}\n\n`
+
+  sseClients.forEach(client => {
+    try {
+      client.send(message)
+    } catch (error) {
+      console.error('Error sending emoji list update to SSE client:', error)
+      sseClients.delete(client)
+    }
+  })
+}
 
 /**
  * Subscribe a new SSE client to receive emoji events
@@ -140,3 +443,5 @@ function cleanupOldEvents(): void {
   }
 }
 
+// Initialize polling on module load
+initializePolling()
