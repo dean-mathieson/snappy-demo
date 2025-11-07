@@ -7,11 +7,53 @@ interface EmojiEvent {
 // In-memory store for emoji events
 const emojiEvents: EmojiEvent[] = []
 
+// Set of connected SSE clients (EventSource connections)
+type SSEClient = {
+  send: (data: string) => void
+  close: () => void
+}
+
+const sseClients = new Set<SSEClient>()
+
 // Maximum age for emoji events (5 minutes in milliseconds)
 const MAX_AGE_MS = 5 * 60 * 1000
 
 /**
- * Add a new emoji event to the store
+ * Subscribe a new SSE client to receive emoji events
+ */
+export function subscribeSSEClient(client: SSEClient): void {
+  sseClients.add(client)
+  console.log(`SSE client connected. Total clients: ${sseClients.size}`)
+}
+
+/**
+ * Unsubscribe an SSE client
+ */
+export function unsubscribeSSEClient(client: SSEClient): void {
+  sseClients.delete(client)
+  console.log(`SSE client disconnected. Total clients: ${sseClients.size}`)
+}
+
+/**
+ * Broadcast an emoji event to all connected SSE clients
+ */
+function broadcastEvent(event: EmojiEvent): void {
+  const message = `data: ${JSON.stringify(event)}\n\n`
+  
+  // Send to all connected clients
+  sseClients.forEach(client => {
+    try {
+      client.send(message)
+    } catch (error) {
+      // If sending fails, remove the client
+      console.error('Error sending to SSE client:', error)
+      sseClients.delete(client)
+    }
+  })
+}
+
+/**
+ * Add a new emoji event to the store and broadcast it to all connected clients
  */
 export function addEmojiEvent(emoji: string): EmojiEvent {
   const event: EmojiEvent = {
