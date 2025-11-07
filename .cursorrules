@@ -1,0 +1,532 @@
+# Project Rules — Snappy Multi-Repo (Laravel 11 API + Nuxt 4 Frontend)
+
+## Multi-Repository Context
+
+This workspace contains both the Laravel API backend and Nuxt frontend. When working with:
+
+- **API endpoints**: Focus on Laravel patterns, Eloquent models, API resources
+- **Frontend integration**: Consider how frontend will consume the API
+- **Shared logic**: Business logic should be in the API, presentation in frontend
+- **Authentication**: API handles auth, frontend manages tokens/sessions
+- **Data flow**: API → JSON → Frontend consumption
+
+## Repository Structure
+
+- **Backend (Laravel)**: `./` - API logic, database, business rules
+- **Frontend (Nuxt)**: `../snappy-frontend/` - UI, user experience, API consumption
+
+## Documentation & Research (Context7)
+
+- Use Context7 to fetch the latest official documentation and API specs when clarifying framework/library behavior.
+- Workflow:
+  - Resolve the library ID first.
+  - Fetch docs for a focused topic (e.g., "eloquent", "middleware", "validation", "api resources").
+- Target libraries (examples):
+  - Laravel: `laravel/framework`
+  - Laravel Passport: `laravel/passport`
+  - Laravel Horizon: `laravel/horizon`
+  - Laravel Telescope: `laravel/telescope`
+  - PHPUnit: `phpunit/phpunit`
+  - Guzzle: `guzzlehttp/guzzle`
+- Versioning: Prefer the latest stable docs. If the project constrains a major version, keep to that major when interpreting APIs.
+- Constraints:
+  - Keep examples and code PHP-only; adapt any framework snippets from docs to match project patterns.
+  - If documentation guidance conflicts with rules in this file, these project rules take precedence.
+- Citations: When docs materially inform an architectural or API decision, include a brief inline citation with a markdown link to the relevant doc section.
+
+## Language & Code Style
+
+- **PHP only.** No TypeScript, no JavaScript, no `.ts`/`.d.ts`/`.tsx` files.
+- Use **strict types** with `declare(strict_types=1);` at the top of all PHP files.
+- Follow PSR-12 coding standards and project-specific code standards via `snappy/code-standards`.
+- Use `const` for variables that won't be reassigned, `let` for those that will (though PHP uses different patterns).
+- Prefer arrow functions for closures and short functions where appropriate.
+- Use template literals (string interpolation) with double quotes.
+- Do not worry about linting, this should be performed by the IDE and CI/CD.
+
+## Framework & Versions
+
+- Laravel **11** with PHP **8.1+**.
+- Use Laravel's built-in features: Eloquent ORM, Artisan commands, Service Providers, Middleware.
+- API versioning via `reindert-vetter/api-version-control` package.
+- Multitenancy support via `snappyservices/multitenancy`.
+- Custom Snappy packages for business logic (ecommerce, payments, etc.).
+
+## Project Structure
+
+- **Controllers:** `app/Http/Controllers/` - API controllers with proper namespacing.
+- **Models:** `app/Models/` - Eloquent models with relationships and business logic.
+- **Services:** `app/Services/` - Business logic services (create if needed).
+- **Middleware:** `app/Http/Middleware/` - Custom middleware for API security.
+- **Providers:** `app/Providers/` - Service providers for dependency injection.
+- **Helpers:** `app/helpers.php` - Global helper functions.
+- **Routes:** `routes/api.php` - API routes with versioning and middleware.
+- **Config:** `config/` - Configuration files, including custom `snappy/` namespace.
+- **Database:** `database/migrations/`, `database/seeders/`, `database/factories/`.
+
+## Environment & Configuration
+
+- **Domain-based configuration:** Most runtime config comes from domain-specific configs.
+- **Environment variables:** Use for infrastructure-level config (database, Redis, AWS credentials).
+- **Config access:** Use `config()` helper and `env()` for environment variables.
+- **Sensitive config:** Automatically filtered out of public config.
+- **Config caching:** Use `php artisan config:cache` in production.
+- **Local development:** Use `.env` file for local configuration.
+- **Config validation:** All configs should be validated and normalized.
+
+## API Patterns
+
+- Use **API Resources** for consistent JSON responses.
+- Implement proper **HTTP status codes** and error handling.
+- Use **Form Requests** for validation.
+- Implement **API versioning** with route prefixes (`v1`, `v2`).
+- Use **middleware** for authentication, rate limiting, and CORS.
+- Follow **RESTful** conventions where possible.
+
+## Controller Patterns
+
+- Use **Resource Controllers** with standard methods (`index`, `store`, `show`, `update`, `destroy`).
+- Implement proper **dependency injection** in constructors.
+- Use **Form Requests** for validation instead of inline validation.
+- Return **API Resources** or **JSON responses** consistently.
+- Handle **exceptions** with proper HTTP status codes.
+- Use **middleware** for authentication and authorization.
+
+## Model Patterns
+
+- Use **Eloquent ORM** with proper relationships.
+- Implement **accessors** and **mutators** for data transformation.
+- Use **scopes** for query optimization.
+- Implement **soft deletes** where appropriate.
+- Use **fillable** and **guarded** properties for mass assignment protection.
+- Implement **model events** for business logic.
+
+## Service Patterns
+
+- Create **Service classes** for complex business logic.
+- Use **dependency injection** for service dependencies.
+- Implement **interfaces** for service contracts.
+- Use **facades** sparingly, prefer dependency injection.
+- Keep services **focused** and **single-purpose**.
+
+## Middleware Patterns
+
+- Use **middleware** for cross-cutting concerns (auth, logging, rate limiting).
+- Implement **custom middleware** for business-specific logic.
+- Use **middleware groups** for common middleware combinations.
+- Handle **exceptions** in middleware appropriately.
+- Use **terminating middleware** for cleanup tasks.
+
+## Database Patterns
+
+- Use **migrations** for database schema changes.
+- Implement **seeders** for test data.
+- Use **factories** for model testing.
+- Follow **naming conventions** for tables and columns.
+- Use **foreign key constraints** and **indexes** appropriately.
+- Implement **soft deletes** where needed.
+
+## Validation Patterns
+
+- Use **Form Requests** for complex validation rules.
+- Implement **custom validation rules** when needed.
+- Use **validation messages** for user-friendly error messages.
+- Validate **API inputs** at all boundaries.
+- Use **sanitization** for user inputs.
+
+## Error Handling
+
+- Use **Laravel's exception handling** with custom exception classes.
+- Implement **API error responses** with consistent format.
+- Use **logging** for error tracking and debugging.
+- Handle **validation errors** with proper HTTP status codes.
+- Implement **global exception handling** in `App\Exceptions\Handler`.
+
+## Logging
+
+- Use **Laravel's logging system** with structured logging.
+- Use **different log levels** (debug, info, warning, error, critical).
+- Log **API requests and responses** for debugging.
+- Use **context** in log messages for better debugging.
+- Implement **log rotation** and **retention policies**.
+
+## Testing
+
+- Use **PHPUnit** for unit and feature tests.
+- Test **API endpoints** with HTTP tests.
+- Use **database transactions** for test isolation.
+- Mock **external services** in tests.
+- Test **authentication and authorization**.
+- Use **factories** for test data generation.
+
+## Performance
+
+- Use **database query optimization** (eager loading, select specific columns).
+- Implement **caching** for expensive operations.
+- Use **queue jobs** for background processing.
+- Optimize **API responses** with proper pagination.
+- Use **Redis** for caching and sessions.
+- Implement **rate limiting** for API protection.
+
+## Security
+
+- Use **Laravel Passport** for API authentication.
+- Implement **CORS** policies for cross-origin requests.
+- Use **CSRF protection** where appropriate.
+- Validate and **sanitize** all inputs.
+- Use **HTTPS** in production.
+- Implement **rate limiting** for API protection.
+- Use **secure headers** and **content security policies**.
+
+## Multitenancy
+
+- Use **SnappyServices\Multitenancy** for tenant isolation.
+- Implement **tenant-specific** database connections.
+- Use **middleware** for tenant resolution.
+- Handle **tenant switching** appropriately.
+- Implement **tenant-specific** configuration.
+
+## Package Integration
+
+- Use **Snappy packages** for business logic (ecommerce, payments, etc.).
+- Follow **package conventions** and **API patterns**.
+- Implement **package-specific** middleware and services.
+- Use **package configuration** files in `config/snappy/`.
+- Handle **package dependencies** appropriately.
+
+## Frontend Integration Patterns
+
+- **API Resources**: Design JSON responses that frontend can easily consume
+- **Consistent naming**: Use camelCase in API responses to match frontend expectations
+- **Error handling**: Provide structured error responses with proper HTTP status codes
+- **Pagination**: Implement consistent pagination metadata for frontend pagination components
+- **Authentication**: Use Bearer tokens that frontend can store and send
+- **CORS**: Configure proper CORS headers for frontend domain
+- **Rate limiting**: Implement appropriate rate limits for frontend consumption
+- **Caching**: Use appropriate cache headers for frontend optimization
+
+## When Generating Code
+
+- Output **`.php` files only** with proper namespacing.
+- Provide minimal, runnable examples with proper error handling.
+- Follow **Laravel conventions** and **project patterns**.
+- Include proper **validation** and **error handling**.
+- Use **dependency injection** and **service containers**.
+- Follow the established **naming conventions** and **patterns**.
+
+## Examples & Snippets (PHP-only)
+
+### API Controller
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Api\V2;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreOrderRequest;
+use App\Http\Resources\OrderResource;
+use App\Models\Order;
+use App\Services\OrderService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class OrderController extends Controller
+{
+    public function __construct(
+        private OrderService $orderService
+    ) {}
+
+    public function index(Request $request): JsonResponse
+    {
+        $orders = Order::with(['items', 'customer'])
+            ->paginate($request->get('per_page', 15));
+
+        return response()->json([
+            'data' => OrderResource::collection($orders),
+            'meta' => [
+                'current_page' => $orders->currentPage(),
+                'total' => $orders->total(),
+            ],
+        ]);
+    }
+
+    public function store(StoreOrderRequest $request): JsonResponse
+    {
+        try {
+            $order = $this->orderService->createOrder($request->validated());
+            
+            return response()->json([
+                'data' => new OrderResource($order),
+                'message' => 'Order created successfully',
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to create order',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+}
+```
+
+### Eloquent Model
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Order extends Model
+{
+    use HasFactory, SoftDeletes;
+
+    protected $fillable = [
+        'customer_id',
+        'business_id',
+        'total_amount',
+        'status',
+        'delivery_address',
+    ];
+
+    protected $casts = [
+        'delivery_address' => 'array',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopeForBusiness($query, int $businessId)
+    {
+        return $query->where('business_id', $businessId);
+    }
+}
+```
+
+### Form Request
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class StoreOrderRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return $this->user()->can('create', Order::class);
+    }
+
+    public function rules(): array
+    {
+        return [
+            'customer_id' => ['required', 'integer', 'exists:customers,id'],
+            'business_id' => ['required', 'integer', 'exists:businesses,id'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.price' => ['required', 'numeric', 'min:0'],
+            'delivery_address' => ['required', 'array'],
+            'delivery_address.street' => ['required', 'string', 'max:255'],
+            'delivery_address.city' => ['required', 'string', 'max:100'],
+            'delivery_address.postcode' => ['required', 'string', 'max:10'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'items.required' => 'At least one item is required.',
+            'items.*.product_id.exists' => 'The selected product does not exist.',
+            'delivery_address.street.required' => 'Street address is required.',
+        ];
+    }
+}
+```
+
+### API Resource
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class OrderResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'customer_id' => $this->customer_id,
+            'business_id' => $this->business_id,
+            'total_amount' => $this->total_amount,
+            'status' => $this->status,
+            'delivery_address' => $this->delivery_address,
+            'items' => OrderItemResource::collection($this->whenLoaded('items')),
+            'customer' => new CustomerResource($this->whenLoaded('customer')),
+            'created_at' => $this->created_at->toISOString(),
+            'updated_at' => $this->updated_at->toISOString(),
+        ];
+    }
+}
+```
+
+### Service Class
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services;
+
+use App\Models\Order;
+use App\Models\OrderItem;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class OrderService
+{
+    public function createOrder(array $data): Order
+    {
+        return DB::transaction(function () use ($data) {
+            $order = Order::create([
+                'customer_id' => $data['customer_id'],
+                'business_id' => $data['business_id'],
+                'total_amount' => $this->calculateTotal($data['items']),
+                'status' => 'pending',
+                'delivery_address' => $data['delivery_address'],
+            ]);
+
+            foreach ($data['items'] as $itemData) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $itemData['product_id'],
+                    'quantity' => $itemData['quantity'],
+                    'price' => $itemData['price'],
+                ]);
+            }
+
+            Log::info('Order created', ['order_id' => $order->id]);
+
+            return $order->load(['items', 'customer']);
+        });
+    }
+
+    private function calculateTotal(array $items): float
+    {
+        return array_sum(array_map(
+            fn($item) => $item['quantity'] * $item['price'],
+            $items
+        ));
+    }
+}
+```
+
+### Middleware
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+
+class ApiLoggingMiddleware
+{
+    public function handle(Request $request, Closure $next)
+    {
+        $startTime = microtime(true);
+
+        $response = $next($request);
+
+        $duration = microtime(true) - $startTime;
+
+        Log::info('API Request', [
+            'method' => $request->method(),
+            'url' => $request->fullUrl(),
+            'status' => $response->getStatusCode(),
+            'duration' => round($duration * 1000, 2) . 'ms',
+            'user_id' => $request->user()?->id,
+        ]);
+
+        return $response;
+    }
+}
+```
+
+### Migration
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('orders', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('customer_id')->constrained()->onDelete('cascade');
+            $table->foreignId('business_id')->constrained()->onDelete('cascade');
+            $table->decimal('total_amount', 10, 2);
+            $table->enum('status', ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'])
+                ->default('pending');
+            $table->json('delivery_address');
+            $table->timestamps();
+            $table->softDeletes();
+
+            $table->index(['customer_id', 'status']);
+            $table->index(['business_id', 'created_at']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('orders');
+    }
+};
+```
