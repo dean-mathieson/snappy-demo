@@ -292,6 +292,21 @@ const connectToSSE = () => {
               processEmojiEvent(event)
             })
           }
+        } else if (data.type === 'voting_session') {
+          // Voting session update
+          if (data.session) {
+            const session = data.session as VotingSession
+            votingSession.value = session
+            // Reset user vote if session changed (new candidates)
+            if (session.candidates.length > 0 && userVote.value && !session.candidates.includes(userVote.value)) {
+              userVote.value = null
+            }
+          }
+        } else if (data.type === 'emoji_list_update') {
+          // Emoji list update from polling
+          if (data.activeEmojis && Array.isArray(data.activeEmojis)) {
+            emojiList.value = data.activeEmojis
+          }
         } else if (data.id && data.emoji && data.timestamp) {
           // Single emoji event
           processEmojiEvent(data as EmojiEvent)
@@ -350,8 +365,125 @@ const scrollToLatest = () => {
   }
 }
 
+// Handle voting
+const handleVote = async (emoji: string) => {
+  if (!clientId.value || isVoting.value) {
+    return
+  }
+
+  isVoting.value = true
+  try {
+    const response = await $fetch<{ success: boolean; session: VotingSession | null }>('/api/vote', {
+      method: 'POST',
+      body: {
+        emoji,
+        clientId: clientId.value
+      }
+    } as any)
+
+    if (response.success && response.session) {
+      votingSession.value = response.session
+      userVote.value = emoji
+    }
+  } catch (error) {
+    console.error('Failed to vote:', error)
+  } finally {
+    isVoting.value = false
+  }
+}
+
+// Format time remaining
+const formatTimeRemaining = (ms: number): string => {
+  const seconds = Math.ceil(ms / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = seconds % 60
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+}
+
+// Calculate vote percentage for a candidate
+const getVotePercentage = (candidate: string): number => {
+  if (!votingSession.value) {
+    return 0
+  }
+
+  const totalVotes = votingSession.value.candidates.reduce((sum: number, c: string) => {
+    return sum + (votingSession.value?.votes[c] || 0)
+  }, 0)
+
+  if (totalVotes === 0) {
+    return 0
+  }
+
+  const candidateVotes = votingSession.value.votes[candidate] || 0
+  return Math.round((candidateVotes / totalVotes) * 100)
+}
+
+// Fetch initial voting session and emoji list
+const fetchInitialData = async () => {
+  try {
+    const data = await $fetch<{ session: VotingSession | null; activeEmojis: string[] }>('/api/voting')
+    if (data.session) {
+      votingSession.value = data.session
+    }
+    if (data.activeEmojis && Array.isArray(data.activeEmojis)) {
+      emojiList.value = data.activeEmojis
+    }
+  } catch (error) {
+    console.error('Failed to fetch initial data:', error)
+  }
+}
+
+// Timer to update time remaining
+let timeRemainingInterval: any = null
+
+// Update time remaining for voting session
+const updateTimeRemaining = () => {
+  if (votingSession.value) {
+    const now = Date.now()
+    const remaining = Math.max(0, votingSession.value.endTime - now)
+    votingSession.value.timeRemaining = remaining
+    
+    if (remaining === 0) {
+      // Session ended, clear interval
+      if (timeRemainingInterval) {
+        clearInterval(timeRemainingInterval)
+        timeRemainingInterval = null
+      }
+    }
+  }
+}
+
+// Watch voting session to start/stop timer
+watch(votingSession, (newSession: VotingSession | null) => {
+  if (timeRemainingInterval) {
+    clearInterval(timeRemainingInterval)
+    timeRemainingInterval = null
+  }
+  
+  if (newSession) {
+    // Update immediately
+    updateTimeRemaining()
+    // Update every second
+    timeRemainingInterval = setInterval(updateTimeRemaining, 1000)
+  }
+})
+
 // Connect to SSE on mount (client-side only - onMounted only runs on client)
 onMounted(() => {
+  // Generate or retrieve client ID
+  if (typeof window !== 'undefined') {
+    let storedClientId = localStorage.getItem('emoji_client_id')
+    if (!storedClientId) {
+      storedClientId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+      localStorage.setItem('emoji_client_id', storedClientId)
+    }
+    clientId.value = storedClientId
+  }
+
+  // Fetch initial data
+  fetchInitialData()
+
+  // Connect to SSE
   connectToSSE()
 })
 
