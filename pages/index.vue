@@ -119,8 +119,7 @@ const emojiList = ['😀', '😂', '😍', '😎', '😢', '😮', '🤔', '😴
 const liveEmojis = ref<EmojiEvent[]>([])
 const isConnected = ref(false)
 const isSubmitting = ref(false)
-const lastPollTimestamp = ref<number>(Date.now())
-const pollInterval = ref<ReturnType<typeof setInterval> | null>(null)
+const eventSource = ref<EventSource | null>(null)
 const liveEmojisContainer = ref<HTMLElement | null>(null)
 
 // Optimistic UI: Add emoji immediately when clicked
