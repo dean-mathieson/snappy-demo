@@ -1,24 +1,24 @@
 <template>
-  <div class="demo-container">
-    <header class="demo-header">
-      <h1>🎉 Snappy Demo - Real-time Emoji Board</h1>
-      <p class="subtitle">Click an emoji to see it appear instantly for everyone!</p>
-      <div class="status-bar">
-        <span class="status-indicator" :class="{ active: isConnected }">
+  <div class="min-h-screen bg-gradient-to-br from-[#667eea] to-[#764ba2] p-8 text-white">
+    <header class="text-center mb-12">
+      <h1 class="text-4xl font-bold mb-2">🎉 Snappy Demo - Real-time Emoji Board</h1>
+      <p class="text-xl opacity-90 mb-4">Click an emoji to see it appear instantly for everyone!</p>
+      <div class="flex justify-center gap-8 mt-4 text-sm">
+        <span class="flex items-center gap-2" :class="{ 'text-green-400': isConnected }">
           {{ isConnected ? '● Connected' : '○ Connecting...' }}
         </span>
-        <span class="emoji-count">{{ liveEmojis.length }} emojis shown</span>
+        <span class="opacity-80">{{ liveEmojis.length }} emojis shown</span>
       </div>
     </header>
 
-    <main class="demo-main">
-      <section class="emoji-grid-section">
-        <h2>Click an Emoji</h2>
-        <div class="emoji-grid">
+    <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+      <section class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
+        <h2 class="text-2xl mb-6 text-center">Click an Emoji</h2>
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] gap-4">
           <button
             v-for="emoji in emojiList"
             :key="emoji"
-            class="emoji-button"
+            class="text-5xl bg-white/20 border-2 border-white/30 rounded-xl p-4 cursor-pointer transition-all duration-200 backdrop-blur-sm hover:bg-white/30 hover:border-white/50 hover:scale-110 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
             @click="handleEmojiClick(emoji)"
             :disabled="isSubmitting"
           >
@@ -27,20 +27,20 @@
         </div>
       </section>
 
-      <section class="live-emojis-section">
-        <h2>Live Emojis</h2>
-        <div class="live-emojis-container">
-          <transition-group name="emoji-fade" tag="div" class="live-emojis-list">
+      <section class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
+        <h2 class="text-2xl mb-6 text-center">Live Emojis</h2>
+        <div ref="liveEmojisContainer" class="max-h-[500px] overflow-y-auto p-4 bg-black/20 rounded-lg scrollbar-thin scrollbar-track-black/10 scrollbar-thumb-white/30 hover:scrollbar-thumb-white/50">
+          <transition-group name="emoji-fade" tag="div" class="flex flex-wrap gap-3 min-h-[100px]">
             <span
               v-for="emojiEvent in liveEmojis"
               :key="emojiEvent.id"
-              class="live-emoji"
-              :class="{ 'pending': emojiEvent.pending }"
+              class="text-4xl inline-block animate-emoji-pop"
+              :class="{ 'opacity-70 animate-emoji-pulse': emojiEvent.pending }"
             >
               {{ emojiEvent.emoji }}
             </span>
           </transition-group>
-          <div v-if="liveEmojis.length === 0" class="empty-state">
+          <div v-if="liveEmojis.length === 0" class="text-center py-8 opacity-70 italic">
             No emojis yet. Click one above to get started!
           </div>
         </div>
@@ -63,7 +63,8 @@ const liveEmojis = ref<EmojiEvent[]>([])
 const isConnected = ref(false)
 const isSubmitting = ref(false)
 const lastPollTimestamp = ref<number>(Date.now())
-const pollInterval = ref<NodeJS.Timeout | null>(null)
+const pollInterval = ref<ReturnType<typeof setInterval> | null>(null)
+const liveEmojisContainer = ref<HTMLElement | null>(null)
 
 // Optimistic UI: Add emoji immediately when clicked
 const handleEmojiClick = async (emoji: string) => {
@@ -167,9 +168,8 @@ const pollForEmojis = async () => {
 
 // Scroll to latest emoji
 const scrollToLatest = () => {
-  const container = document.querySelector('.live-emojis-container')
-  if (container) {
-    container.scrollTop = container.scrollHeight
+  if (liveEmojisContainer.value) {
+    liveEmojisContainer.value.scrollTop = liveEmojisContainer.value.scrollHeight
   }
 }
 
@@ -191,172 +191,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.demo-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 2rem;
-  color: white;
-}
-
-.demo-header {
-  text-align: center;
-  margin-bottom: 3rem;
-}
-
-.demo-header h1 {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
-  font-weight: 700;
-}
-
-.subtitle {
-  font-size: 1.2rem;
-  opacity: 0.9;
-  margin-bottom: 1rem;
-}
-
-.status-bar {
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
-  margin-top: 1rem;
-  font-size: 0.9rem;
-}
-
-.status-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.status-indicator.active {
-  color: #4ade80;
-}
-
-.emoji-count {
-  opacity: 0.8;
-}
-
-.demo-main {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
-
-@media (max-width: 768px) {
-  .demo-main {
-    grid-template-columns: 1fr;
-  }
-}
-
-.emoji-grid-section,
-.live-emojis-section {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 1rem;
-  padding: 2rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-}
-
-.emoji-grid-section h2,
-.live-emojis-section h2 {
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
-}
-
-.emoji-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-  gap: 1rem;
-}
-
-.emoji-button {
-  font-size: 3rem;
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 0.75rem;
-  padding: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(5px);
-}
-
-.emoji-button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: scale(1.1);
-}
-
-.emoji-button:active:not(:disabled) {
-  transform: scale(0.95);
-}
-
-.emoji-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.live-emojis-container {
-  max-height: 500px;
-  overflow-y: auto;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 0.5rem;
-}
-
-.live-emojis-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  min-height: 100px;
-}
-
-.live-emoji {
-  font-size: 2.5rem;
-  display: inline-block;
-  animation: emojiPop 0.3s ease-out;
-  opacity: 1;
-}
-
-.live-emoji.pending {
-  opacity: 0.7;
-  animation: emojiPulse 1s ease-in-out infinite;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 2rem;
-  opacity: 0.7;
-  font-style: italic;
-}
-
-/* Animations */
-@keyframes emojiPop {
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.2);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes emojiPulse {
-  0%, 100% {
-    opacity: 0.7;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
+/* Vue transition classes */
 .emoji-fade-enter-active,
 .emoji-fade-leave-active {
   transition: all 0.3s ease;
@@ -372,22 +207,22 @@ onUnmounted(() => {
   transform: scale(0.5);
 }
 
-/* Scrollbar styling */
-.live-emojis-container::-webkit-scrollbar {
+/* Custom scrollbar styling */
+.max-h-\[500px\]::-webkit-scrollbar {
   width: 8px;
 }
 
-.live-emojis-container::-webkit-scrollbar-track {
+.max-h-\[500px\]::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
 }
 
-.live-emojis-container::-webkit-scrollbar-thumb {
+.max-h-\[500px\]::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.3);
   border-radius: 4px;
 }
 
-.live-emojis-container::-webkit-scrollbar-thumb:hover {
+.max-h-\[500px\]::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
 }
 </style>
