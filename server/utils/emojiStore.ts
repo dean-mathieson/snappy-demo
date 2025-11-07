@@ -329,6 +329,37 @@ export function subscribeSSEClient(client: SSEClient): void {
   console.log(`SSE client connected. Total clients: ${sseClients.size}`)
   // Broadcast updated client count
   broadcastClientCount()
+  
+  // Send current voting session if exists
+  if (currentVotingSession) {
+    const message = `data: ${JSON.stringify({
+      type: 'voting_session',
+      session: {
+        type: currentVotingSession.type,
+        candidates: currentVotingSession.candidates,
+        votes: Object.fromEntries(currentVotingSession.votes),
+        startTime: currentVotingSession.startTime,
+        endTime: currentVotingSession.endTime,
+        timeRemaining: Math.max(0, currentVotingSession.endTime - Date.now())
+      }
+    })}\n\n`
+    try {
+      client.send(message)
+    } catch (error) {
+      console.error('Error sending voting session to new client:', error)
+    }
+  }
+
+  // Send current active emoji list
+  const emojiListMessage = `data: ${JSON.stringify({
+    type: 'emoji_list_update',
+    activeEmojis: activeEmojis
+  })}\n\n`
+  try {
+    client.send(emojiListMessage)
+  } catch (error) {
+    console.error('Error sending emoji list to new client:', error)
+  }
 }
 
 /**
