@@ -11,7 +11,72 @@
       </div>
     </header>
 
-    <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+    <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- Voting Section -->
+      <section class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
+        <h2 class="text-2xl mb-4 text-center">
+          {{ votingSession?.type === 'add' ? '➕ Vote to Add' : '➖ Vote to Remove' }}
+        </h2>
+        <div v-if="votingSession" class="mb-4">
+          <div class="text-sm text-center opacity-80 mb-4">
+            Time remaining: {{ formatTimeRemaining(votingSession.timeRemaining) }}
+          </div>
+          <div class="flex flex-col gap-4">
+            <button
+              v-for="candidate in votingSession.candidates"
+              :key="candidate"
+              @click="handleVote(candidate)"
+              class="relative bg-white/20 border-2 rounded-xl p-6 cursor-pointer transition-all duration-300 backdrop-blur-sm hover:bg-white/30 hover:scale-105 active:scale-100 disabled:opacity-60 disabled:cursor-not-allowed overflow-hidden group"
+              :class="{
+                'border-yellow-400 bg-yellow-400/40 shadow-lg shadow-yellow-400/50 scale-105': userVote === candidate,
+                'border-white/30 hover:border-white/50': userVote !== candidate
+              }"
+              :disabled="isVoting"
+            >
+              <!-- Emoji -->
+              <div class="text-6xl mb-3 flex justify-center">
+                {{ candidate }}
+              </div>
+              
+              <!-- Vote count badge -->
+              <div class="absolute top-3 right-3 bg-yellow-400 text-black text-xs font-bold rounded-full w-7 h-7 flex items-center justify-center z-10 shadow-md">
+                {{ votingSession.votes[candidate] || 0 }}
+              </div>
+              
+              <!-- Selected indicator -->
+              <div v-if="userVote === candidate" class="absolute top-3 left-3 bg-yellow-400 text-black text-xs font-bold rounded-full w-7 h-7 flex items-center justify-center z-10 shadow-md">
+                ✓
+              </div>
+              
+              <!-- Progress bar container -->
+              <div class="absolute bottom-0 left-0 right-0 h-2 bg-black/20 rounded-b-xl overflow-hidden">
+                <div 
+                  class="h-full bg-yellow-400 transition-all duration-500 ease-out"
+                  :style="{ width: `${getVotePercentage(candidate)}%` }"
+                ></div>
+              </div>
+              
+              <!-- Percentage text -->
+              <div class="mt-2 text-center">
+                <span class="text-sm font-bold" :class="userVote === candidate ? 'text-yellow-300' : 'text-white/80'">
+                  {{ getVotePercentage(candidate) }}%
+                </span>
+              </div>
+            </button>
+          </div>
+          <div v-if="userVote" class="mt-4 text-center">
+            <div class="inline-flex items-center gap-2 bg-yellow-400/20 border border-yellow-400/50 rounded-lg px-4 py-2">
+              <span class="text-sm font-semibold text-yellow-300">You voted for:</span>
+              <span class="text-2xl">{{ userVote }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-else class="text-center py-8 opacity-70 italic">
+          No active voting session
+        </div>
+      </section>
+
+      <!-- Emoji Selection Section -->
       <section class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
         <h2 class="text-2xl mb-6 text-center">Click an Emoji</h2>
         <div class="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] gap-4">
@@ -27,6 +92,7 @@
         </div>
       </section>
 
+      <!-- Live Emojis Section -->
       <section class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
         <h2 class="text-2xl mb-6 text-center">Live Emojis</h2>
         <div ref="liveEmojisContainer" class="max-h-[500px] overflow-y-auto p-4 bg-black/20 rounded-lg scrollbar-thin scrollbar-track-black/10 scrollbar-thumb-white/30 hover:scrollbar-thumb-white/50">
