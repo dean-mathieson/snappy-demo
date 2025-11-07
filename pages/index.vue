@@ -496,6 +496,12 @@ onUnmounted(() => {
   }
   isReconnecting = false
   
+  // Clear time remaining interval
+  if (timeRemainingInterval) {
+    clearInterval(timeRemainingInterval)
+    timeRemainingInterval = null
+  }
+  
   if (eventSource.value) {
     eventSource.value.close()
     eventSource.value = null
