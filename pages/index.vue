@@ -259,19 +259,16 @@ const scrollToLatest = () => {
   }
 }
 
-// Start polling on mount
+// Connect to SSE on mount
 onMounted(() => {
-  // Initial poll
-  pollForEmojis()
-  
-  // Set up polling interval (500ms for near-instant updates)
-  pollInterval.value = setInterval(pollForEmojis, 500)
+  connectToSSE()
 })
 
-// Clean up polling on unmount
+// Clean up SSE connection on unmount
 onUnmounted(() => {
-  if (pollInterval.value) {
-    clearInterval(pollInterval.value)
+  if (eventSource.value) {
+    eventSource.value.close()
+    eventSource.value = null
   }
 })
 </script>
