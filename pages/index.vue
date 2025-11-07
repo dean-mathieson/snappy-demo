@@ -146,10 +146,10 @@ const handleEmojiClick = async (emoji: string) => {
     const response = await $fetch<{ success: boolean; event: EmojiEvent }>('/api/emoji', {
       method: 'POST',
       body: { emoji }
-    })
+    } as any)
     
     // Replace optimistic event with server event
-    const index = liveEmojis.value.findIndex(e => e.id === optimisticEvent.id)
+    const index = liveEmojis.value.findIndex((e: EmojiEvent) => e.id === optimisticEvent.id)
     if (index !== -1) {
       // Replace with server event (has real ID, no pending flag)
       liveEmojis.value[index] = response.event
@@ -157,7 +157,7 @@ const handleEmojiClick = async (emoji: string) => {
   } catch (error) {
     console.error('Failed to submit emoji:', error)
     // Remove the optimistic emoji on error
-    const index = liveEmojis.value.findIndex(e => e.id === optimisticEvent.id)
+    const index = liveEmojis.value.findIndex((e: EmojiEvent) => e.id === optimisticEvent.id)
     if (index !== -1) {
       liveEmojis.value.splice(index, 1)
     }
@@ -178,19 +178,19 @@ const pollForEmojis = async () => {
       query: {
         since: lastPollTimestamp.value
       }
-    })
+    } as any)
     
     isConnected.value = true
     
     // Add new events that we don't already have
-    const existingIds = new Set(liveEmojis.value.map(e => e.id))
-    const newEvents = response.events.filter(e => !existingIds.has(e.id))
+    const existingIds = new Set(liveEmojis.value.map((e: EmojiEvent) => e.id))
+    const newEvents = response.events.filter((e: EmojiEvent) => !existingIds.has(e.id))
     
     // Process new events - replace pending ones or add new ones
     for (const event of newEvents) {
       // Check if we have a pending event with the same emoji and similar timestamp
       const pendingIndex = liveEmojis.value.findIndex(
-        e => e.pending && e.emoji === event.emoji && Math.abs(e.timestamp - event.timestamp) < 2000
+        (e: EmojiEvent) => e.pending && e.emoji === event.emoji && Math.abs(e.timestamp - event.timestamp) < 2000
       )
       
       if (pendingIndex !== -1) {
