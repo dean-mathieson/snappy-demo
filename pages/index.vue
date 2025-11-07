@@ -50,6 +50,63 @@
 </template>
 
 <script setup lang="ts">
+// SEO Meta Information
+useHead({
+  title: 'Snappy Demo - Real-time Emoji Board',
+  meta: [
+    {
+      name: 'description',
+      content: 'Experience real-time emoji interactions! Click emojis and watch them appear instantly for everyone. A live collaborative emoji board demo powered by Snappy.'
+    },
+    {
+      name: 'keywords',
+      content: 'emoji board, real-time, collaborative, interactive demo, snappy, live updates, emoji sharing'
+    },
+    {
+      name: 'author',
+      content: 'Snappy'
+    },
+    {
+      property: 'og:title',
+      content: 'Snappy Demo - Real-time Emoji Board'
+    },
+    {
+      property: 'og:description',
+      content: 'Experience real-time emoji interactions! Click emojis and watch them appear instantly for everyone.'
+    },
+    {
+      property: 'og:type',
+      content: 'website'
+    },
+    {
+      property: 'og:image',
+      content: '/og-image.png' // You can add an actual OG image later
+    },
+    {
+      name: 'twitter:card',
+      content: 'summary_large_image'
+    },
+    {
+      name: 'twitter:title',
+      content: 'Snappy Demo - Real-time Emoji Board'
+    },
+    {
+      name: 'twitter:description',
+      content: 'Experience real-time emoji interactions! Click emojis and watch them appear instantly for everyone.'
+    },
+    {
+      name: 'theme-color',
+      content: '#667eea'
+    }
+  ],
+  link: [
+    {
+      rel: 'canonical',
+      href: 'https://snappy-demo.vercel.app' // Update with your actual domain
+    }
+  ]
+})
+
 interface EmojiEvent {
   id: string
   emoji: string
